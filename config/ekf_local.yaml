@@ -1,0 +1,44 @@
+# File: ekf_local.yaml
+# This EKF fuses high-rate sensors (Odom, IMU) to produce a stable, 
+# low-drift estimate of the robot's pose in the ODOM frame.
+
+ekf_local_node:
+  ros__parameters:
+    frequency: 30.0
+    sensor_timeout: 0.1
+    two_d_mode: true 
+
+    # Frames for Local EKF
+    world_frame: odom 
+    odom_frame: odom 
+    base_link_frame: base_link 
+
+    # ------------------------------------
+    # SENSOR 1: WHEEL ODOMETRY (odom0) -> Relative Position/Velocity
+    # ------------------------------------
+    odom0: /odom 
+    odom0_config: [true,  true,  false, # X, Y, Z - Trust position
+                   false, false, true,  # Roll, Pitch, Yaw - Trust Yaw
+                   true,  true,  false, # Vx, Vy, Vz - Trust linear velocity
+                   false, false, true]  # Vroll, Vpitch, Vyaw - Trust angular Z velocity
+    odom0_differential: false 
+    odom0_relative: false
+    odom0_queue_size: 10
+    
+    # ------------------------------------
+    # SENSOR 2: IMU (imu0) -> Orientation/Angular Velocity
+    # ------------------------------------
+    imu0: /imu
+    imu0_frame_id: husky_ur3/base_link/imu_sensor
+    imu0_config: [false, false, false,
+		           true,  true,  true,
+		           false, false, false,
+		           true,  true,  true]
+    imu0_differential: false 
+    imu0_relative: false
+    imu0_queue_size: 10
+    imu0_remove_linear_acceleration_bias: true
+    
+    # Output topic for the local EKF
+    publish_tf: true # Publish odom -> base_link
+    #odom_topic: odom/filtered_local
