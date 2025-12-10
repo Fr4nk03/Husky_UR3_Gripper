@@ -1,0 +1,40 @@
+# This node converts GPS data (lat/lon) and fuses it with the EKF output
+# to produce a global pose estimate in the MAP frame.
+
+navsat_transform_node:
+  ros__parameters:
+    # ------------------------------------
+    # INPUT TOPICS
+    # ------------------------------------
+    # The topic carrying raw GPS data
+    gps_topic: /gps/fix
+    
+    # The topic carrying the local EKF's *fused* output (odom -> base_link)
+    odom_topic: odom/filtered_local 
+
+    # The topic carrying IMU data
+    imu_topic: /imu
+
+    # ------------------------------------
+    # FRAME IDs
+    # ------------------------------------
+    # The frames must match the EKF setup
+    magnetic_declination_topic: /tf_static # Standard practice to use a static transform
+    yaw_frame_id: base_link 
+    
+    # ------------------------------------
+    # CORE SETTINGS
+    # ------------------------------------
+    # The world frame used by the global EKF
+    world_frame_id: map 
+    
+    # The initial GPS coordinates (often the robot's starting position in the simulation)
+    # The navsat_transform_node will use the first valid GPS reading received to set the 
+    # MAP origin, but you can define a reference point if needed.
+    # We will let it use the first position received:
+    zero_altitude: true
+    broadcast_utm_tf: false
+    
+    # Output topic (transformed GPS data)
+    # output_topic: "/gps/filtered" 
+    publish_filtered_gps: true

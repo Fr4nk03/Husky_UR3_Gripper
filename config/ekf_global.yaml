@@ -1,0 +1,47 @@
+# This EKF fuses the local pose (odom/filtered_local) with the globally 
+# corrected pose from the Navsat Transform Node (gps/filtered). 
+# This provides the absolute pose estimate in the MAP frame.
+
+ekf_filter_node_global:
+  ros__parameters:
+    frequency: 10.0 # Lower frequency is fine for absolute correction
+    sensor_timeout: 0.1
+    two_d_mode: true 
+
+    # Frames for Global EKF
+    world_frame: map # Now our world frame is the globally fixed MAP frame
+    odom_frame: odom 
+    base_link_frame: base_link 
+
+    # ------------------------------------
+    # SENSOR 1: LOCAL EKF POSE (odom0) -> Fused pose from the local EKF (Step 1)
+    # ------------------------------------
+    odom0: odom/filtered_local # Output of the EKF in Step 1
+    odom0_config: [true,  true,  false, # X, Y, Z
+                   true,  true,  true,  # Roll, Pitch, Yaw
+                   false, false, false, # Vx, Vy, Vz
+                   false, false, false] # Vroll, Vpitch, Vyaw
+    # NOTES: The entire pose (X, Y, Yaw, Roll, Pitch) is trusted from the local EKF output.
+    odom0_differential: false 
+    odom0_relative: false
+    odom0_queue_size: 10
+    
+    # ------------------------------------
+    # SENSOR 2: FILTERED GPS POSE (pose0) -> Global correction from Navsat Transform
+    # ------------------------------------
+    pose0: /odometry/gps_fused # Output of the Navsat Transform Node (Step 2)
+    pose0_config: [true,  true,  false, # X, Y, Z - Only trust position
+                   false, false, false, # Roll, Pitch, Yaw
+                   false, false, false, # Vx, Vy, Vz
+                   false, false, false] # Vroll, Vpitch, Vyaw
+    # NOTES: GPS only provides X/Y position (converted from Lat/Lon). Orientation is ignored.
+    pose0_differential: false 
+    pose0_relative: false
+    pose0_queue_size: 10
+    
+    # ------------------------------------
+    # PUBLISHED TOPICS
+    # ------------------------------------
+    # The final, required pose topic: MAP -> base_link
+    publish_tf: true # Publish map -> odom transform
+    odom_topic: /robot_pose # Required final output topic
