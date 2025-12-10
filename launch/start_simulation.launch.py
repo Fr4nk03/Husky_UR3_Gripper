@@ -41,7 +41,6 @@ def generate_launch_description():
     
     
     # Package paths
-    
     pkg_path = get_package_share_directory('husky_ur3_gripper_description')
     husky_description_path = get_package_share_directory('husky_description')
     ur_description_path = get_package_share_directory('ur_description')
@@ -54,7 +53,8 @@ def generate_launch_description():
             os.path.join(husky_description_path, '..'),
             os.path.join(ur_description_path, '..'),
             os.path.join(gripper_description_path, '..'),
-            os.environ.get('IGN_GAZEBO_RESOURCE_PATH', '')
+            os.environ.get('IGN_GAZEBO_RESOURCE_PATH', ''),
+            os.path.join(pkg_path, 'models'),
         ])
     )
     
@@ -103,13 +103,34 @@ def generate_launch_description():
         parameters=[robot_description, {'use_sim_time': use_sim_time}]
     )
     
+    '''
+    world_path = os.path.join(
+		pkg_path,
+		'worlds',
+		'test_stereo.world'
+	)
+	'''
+    world_path = os.path.join(
+		pkg_path,
+		'worlds',
+		'mars_thanksgiving.world'
+	)
+	
     # Gazebo
+    '''
     gazebo = ExecuteProcess(
         cmd=['ign', 'gazebo', 'empty.sdf', '-r', '-v', '3'], 
         output='screen'
     )
+    '''
+    gazebo = ExecuteProcess(
+        cmd=['ign', 'gazebo', world_path, '-r', '-v', '3'], 
+        output='screen'
+    )
     
     # Spawn robot - DELAYED to wait for Gazebo
+    # Behind the starting line
+    
     spawn_robot = TimerAction(
         period=1.0,
         actions=[
@@ -119,14 +140,35 @@ def generate_launch_description():
                 arguments=[
                     '-name', 'husky_ur3',
                     '-topic', 'robot_description',
-                    '-z', '0.3'
+                    '-x', '-2.5',
+                    '-y', '0',
+                    '-z', '0.2'
                 ],
                 output='screen'
             )
         ]
     )
-    
-    
+    '''
+    # Around the first waypoint
+    spawn_robot = TimerAction(
+        period=1.0,
+        actions=[
+            Node(
+                package='ros_gz_sim',
+                executable='create',
+                arguments=[
+                    '-name', 'husky_ur3',
+                    '-topic', 'robot_description',
+                    '-x', '8',
+                    '-y', '0',
+                    '-z', '0.2',
+                    '-Y', '3.14159'
+                ],
+                output='screen'
+            )
+        ]
+    )
+    '''
     # ROS-Gazebo Bridge - DELAYED
     bridge = TimerAction(
         period=1.0,
@@ -143,10 +185,26 @@ def generate_launch_description():
                     '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
                     '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
                     '/imu@sensor_msgs/msg/Imu@gz.msgs.IMU',
+                    '/navsat@sensor_msgs/msg/NavSatFix@ignition.msgs.NavSat',
                     '/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
+                    
+                    'ur3_shoulder_pan_joint/cmd_pos@std_msgs/msg/Float64@gz.msgs.Double',
+                    'ur3_shoulder_lift_joint/cmd_pos@std_msgs/msg/Float64@gz.msgs.Double',
+                    'ur3_elbow_joint/cmd_pos@std_msgs/msg/Float64@gz.msgs.Double',
+                    'ur3_wrist_1_joint/cmd_pos@std_msgs/msg/Float64@gz.msgs.Double',
+                    'ur3_wrist_2_joint/cmd_pos@std_msgs/msg/Float64@gz.msgs.Double',
+                    'ur3_wrist_3_joint/cmd_pos@std_msgs/msg/Float64@gz.msgs.Double',
                     
                     '/rh_p12_rn_position/command@std_msgs/msg/Float64@gz.msgs.Double',
                     #'/rh_p12_rn_position/command@std_msgs/msg/Float64MultiArray@gz.msgs.Double'
+                    
+					'/zed2/left/image_raw@sensor_msgs/msg/Image@gz.msgs.Image',
+					'/zed2/right/image_raw@sensor_msgs/msg/Image@gz.msgs.Image',
+					'/zed2/left/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
+                	'/zed2/right/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
+                ],
+                remappings=[
+                    ('/navsat', '/gps/fix') # Map the bridged output to the expected topic name
                 ],
                 output='screen',
                 parameters=[{'use_sim_time': use_sim_time}]
