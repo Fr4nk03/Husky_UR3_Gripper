@@ -49,6 +49,8 @@
   <xacro:include filename="$(find rh_p12_rn_a_description)/ros2_control/rh_p12_rn_a.ros2_control.xacro" />
   -->
   
+  <!-- ZED Camera -->
+  <xacro:include filename="$(find husky_ur3_gripper_description)/urdf/zed_mini_macro.urdf.xacro" />
   
   <xacro:husky
     prefix="$(arg prefix)"
@@ -59,26 +61,34 @@
   
   <gazebo reference="imu_link">
     <sensor name="imu_sensor" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <visualize>false</visualize>
+      <topic>imu</topic>  <!-- Gazebo topic -->
+      <enable_metrics>false</enable_metrics>
+    
+      <!-- IMU plugin for Ignition Gazebo -->
       <plugin filename="libignition-gazebo-imu-system.so"
               name="ignition::gazebo::systems::Imu">
       </plugin>
-      <always_on>true</always_on>
-      <update_rate>100</update_rate>
-      <visualize>true</visualize>
-      <topic>imu</topic>
     </sensor>
   </gazebo>
   
-  <!--
-  <gazebo reference="imu_link">
-    <sensor name="imu_sensor" type="imu">
+
+  <gazebo reference="gps_link">
+    <sensor name="gps_sensor" type="navsat">
       <always_on>true</always_on>
-      <update_rate>100</update_rate>
-      
+      <update_rate>10</update_rate>  <!-- GPS typically 1-10 Hz -->
+      <visualize>false</visualize>
+      <topic>navsat</topic>  <!-- Gazebo topic -->
+    
+      <!-- GPS plugin -->
+      <plugin filename="libignition-gazebo-navsat-system.so"
+              name="ignition::gazebo::systems::NavSat">
+        <frame_id>gps_link</frame_id>
+      </plugin>
     </sensor>
   </gazebo>
-  
-  -->
   
   <!-- Connect Husky's base_link to the new mount link at the desired pose -->
   <link name="ur3_mount"/>
@@ -101,7 +111,7 @@
     sim_ignition="true"
     generate_ros2_control_tag="false"
     >
-    <origin xyz="0 0 0" rpy="0 0 0" />
+    <origin xyz="0 0 0" rpy="0 0 ${pi}" />
   </xacro:ur_robot>
   
   
@@ -118,6 +128,14 @@
   <xacro:rh_p12_rn_a prefix="$(arg prefix)" />
   <xacro:rh_p12_rn_a_gazebo prefix="$(arg prefix)" />
   
+  <!-- ZED to HUSKY -->
+  <xacro:zed_camera name="zed2" model="zed2" />
+  
+  <joint name="zed2_mount_joint" type="fixed">
+  	<parent link="top_plate_link"/>
+  	<child  link="zed2_base_link"/>
+  	<origin xyz="0.4 0 0.1" rpy="0 0 0"/>
+  </joint>
 
   <!--
   <xacro:rh_p12_rn_a_system
@@ -200,6 +218,7 @@
     <plugin filename="libignition-gazebo-joint-position-controller-system.so"
             name="ignition::gazebo::systems::JointPositionController">
       <joint_name>ur3_shoulder_pan_joint</joint_name>
+      <topic>ur3_shoulder_pan_joint/cmd_pos</topic>
       <p_gain>500</p_gain>
       <i_gain>100</i_gain>
       <d_gain>10</d_gain>
@@ -209,6 +228,7 @@
     <plugin filename="libignition-gazebo-joint-position-controller-system.so"
             name="ignition::gazebo::systems::JointPositionController">
       <joint_name>ur3_shoulder_lift_joint</joint_name>
+      <topic>ur3_shoulder_lift_joint/cmd_pos</topic>
       <p_gain>500</p_gain>
       <i_gain>100</i_gain>
       <d_gain>10</d_gain>
@@ -218,6 +238,7 @@
     <plugin filename="libignition-gazebo-joint-position-controller-system.so"
             name="ignition::gazebo::systems::JointPositionController">
       <joint_name>ur3_elbow_joint</joint_name>
+      <topic>ur3_elbow_joint/cmd_pos</topic>
       <p_gain>500</p_gain>
       <i_gain>100</i_gain>
       <d_gain>10</d_gain>
@@ -227,6 +248,7 @@
     <plugin filename="libignition-gazebo-joint-position-controller-system.so"
             name="ignition::gazebo::systems::JointPositionController">
       <joint_name>ur3_wrist_1_joint</joint_name>
+      <topic>ur3_wrist_1_joint/cmd_pos</topic>
       <p_gain>500</p_gain>
       <i_gain>100</i_gain>
       <d_gain>10</d_gain>
@@ -238,6 +260,7 @@
     <plugin filename="libignition-gazebo-joint-position-controller-system.so"
             name="ignition::gazebo::systems::JointPositionController">
       <joint_name>ur3_wrist_2_joint</joint_name>
+      <topic>ur3_wrist_2_joint/cmd_pos</topic>
       <p_gain>500</p_gain>
       <i_gain>100</i_gain>
       <d_gain>10</d_gain>
@@ -249,6 +272,7 @@
     <plugin filename="libignition-gazebo-joint-position-controller-system.so"
             name="ignition::gazebo::systems::JointPositionController">
       <joint_name>ur3_wrist_3_joint</joint_name>
+      <topic>ur3_wrist_3_joint/cmd_pos</topic>
       <p_gain>500</p_gain>
       <i_gain>100</i_gain>
       <d_gain>10</d_gain>
